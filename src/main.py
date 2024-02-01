@@ -131,4 +131,20 @@ def training(model, x, y):
         else:
             raise Exception('Mauvaise saisie')
 
+def clearData(df):
+    res = df["class"].value_counts()
+    dtemp = df.sort_values(by=['class'])
+    supr = int(res["GALAXY"]/1.5)
+    
+    dtemp.drop(dtemp.index[range(1,supr)])
+    dtemp = dtemp.iloc[34000:]
+    return dtemp
+
+def showDate(df):
+    res = df["class"].value_counts()
+    x = [res["GALAXY"],res["QSO"],res["STAR"]]
+    plt.figure(figsize = (8, 8))
+    plt.pie(x, labels = ['GALAXY', 'QSO', 'Star'])
+    plt.legend()
+    
 main()
