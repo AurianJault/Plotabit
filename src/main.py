@@ -56,13 +56,13 @@ def model_switch(choice):
     elif (choice == 2):
         model = DecisionTreeClassifier(random_state=0, max_depth=20)
     elif (choice == 3):
-        model = RandomForestClassifier(n_estimators=100 ,criterion='entropy', n_jobs=-1)
+        model = RandomForestClassifier(n_estimators=100 ,criterion='entropy')
     elif (choice == 4):
-        model = SGDClassifier(max_iter=1000, tol=0.01)
+        model = sgdclassifier(max_iter=1000, tol=0.01)
     elif (choice == 5):
-        model = svm.SVC(kernel='linear', C = 1.0)    
+        model = svm.svc(kernel='linear', c = 1.0)    
     else:
-        raise Exception('RENTRE LE BON NOMBRE GROS CON')       
+        raise Exception('Wrong entry')       
     
     return model
 
@@ -93,7 +93,7 @@ def printStatValues(ypredit,ytest):
     print("Galaxy : ",(galaxyStats*100/NF),"%","Star :",(starStats*100/NF),"%","QSO : ",(QSOStats*100/NF),"%")
 
 # Train model
-def training(model, x, y):
+def training(model, x, y,res=-1):
     Xtrain, Xtest, ytrain, ytest = train_test_split(x, y,test_size=0.25, random_state=0)
     Xtrain = Xtrain.values
     Xtest = Xtest.values
@@ -102,17 +102,11 @@ def training(model, x, y):
         Xtrain = Xtrain.reshape(-1, 1)
     if len(Xtest.shape) < 2:
         Xtest = Xtest.reshape(-1, 1)
-
-    # if isinstance(model, svm.LinearSVC):
-    #     with parallel_backend('threading', n_jobs=-1):
-    #         model.fit(X_train, y_train)
-    
-    #else: 
+ 
     model.fit(Xtrain,ytrain)
     
     ypredit = model.predict(Xtest)
     os.system("clear")
-    res = -1
     while(res != 0):
         print(" Rentre un chiffre:\n\n1 - Stats %\n2 - Stats raw\n3 - accuracy_score")
         print("0 - QUIT")
@@ -129,22 +123,85 @@ def training(model, x, y):
         elif res == 0:
             break
         else:
-            raise Exception('Mauvaise saisie')
+            raise Exception('Wrong entry')
 
 def clearData(df):
     res = df["class"].value_counts()
     dtemp = df.sort_values(by=['class'])
     supr = int(res["GALAXY"]/1.5)
-    
     dtemp.drop(dtemp.index[range(1,supr)])
     dtemp = dtemp.iloc[34000:]
     return dtemp
 
-def showDate(df):
+def showData(df):
     res = df["class"].value_counts()
     x = [res["GALAXY"],res["QSO"],res["STAR"]]
     plt.figure(figsize = (8, 8))
     plt.pie(x, labels = ['GALAXY', 'QSO', 'Star'])
     plt.legend()
-    
-main()
+
+def allModels(df):
+    dfClone = df.copy()
+    # Aditionnale model randomforestclassifier(n_estimators=100 ,criterion='entropy', n_jobs=-1)
+    modelArray=  ['KNN','Classifier']
+    dfTemp = df.drop(['obj_ID','field_ID','run_ID','rerun_ID','cam_col','plate','MJD','fiber_ID','class'],axis=1)
+    y = df['class'].values
+    x = list(dfTemp.columns.values)
+    datas = []
+    for i in range(0,len(x)):
+        arrayColumns = [x[i]]
+        for j in range(i+1,len(x)):
+            xValues = dfTemp[arrayColumns]
+            for k in range(0,len(modelArray)):
+                if modelArray[k] == "KNN":
+                    model = model_switch(1)
+                elif modelArray[k] == "Classifier":
+                    model = model_switch(2)
+                else:
+                    model = model_switch(1)
+                print("Model used : ",modelArray[k], "---- Case : ",model)
+                print("X values used : ",arrayColumns)
+                accu = customTrainingRaw(model,xValues,y,3)
+                it = [modelArray[k],arrayColumns,accu]
+                datas.append(it)
+            arrayColumns.append(x[j])
+    return datas
+
+def customTrainingRaw(model, x, y,res=-1):
+    Xtrain, Xtest, ytrain, ytest = train_test_split(x, y,test_size=0.25, random_state=0)
+    Xtrain = Xtrain.values
+    Xtest = Xtest.values
+    if len(Xtrain.shape) < 2:
+        Xtrain = Xtrain.reshape(-1, 1)
+    if len(Xtest.shape) < 2:
+        Xtest = Xtest.reshape(-1, 1)
+    model.fit(Xtrain,ytrain)
+    ypredit = model.predict(Xtest)
+    print(accuracy_score(ytest, ypredit))
+    return accuracy_score(ytest, ypredit)
+
+def bestModelFinder(datas):
+    maxi = 0
+    knnMean= 0
+    treeMean= 0
+    for i in range(0,len(datas)):
+        if datas[i][0] == 'KNN':
+            knnMean += datas[i][2]
+        else:
+            treeMean += datas[i][2]
+        if (datas[i][2] > maxi):
+            maxi = datas[i][2]
+            res = datas[i]
+    print("BEST CHOICE IS :", res)
+    print("Knn mean accuracy_score : ", mean(knnMean))
+    print("Knn variance accuracy_score : ", variance(knnMean))
+    print("Knn ecart-type accuracy_score : ", stdev(knnMean))
+    print("Tree mean accuracy_score : ", mean(treeMean))
+    print("Tree variance accuracy_score : ", variance(treeMean))
+    print("Tree ecart-type accuracy_score : ", stdev(treeMean))
+   
+
+
+
+df = read_dataset("../data.csv")
+bestModelFinder(allModels(df))

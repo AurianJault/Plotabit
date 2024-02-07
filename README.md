@@ -20,7 +20,7 @@ Python Machine Learning: https://machinelearningmastery.com/machine-learning-in-
 
 ## Analysis
 
-- [ ] Train models with just 20000 "GALAXY" class (has an impact?)
+- [X] Train models with just 20000 "GALAXY" class (has an impact?)
 - [ ] Which model is the best, ratio learn_time/precision
 - [ ] Can we drop more categories and have same results (useless data?)
 - [ ] Compare prediction with y_test that were false
