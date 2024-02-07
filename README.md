@@ -1,6 +1,8 @@
 # Plotabit
 Dataset link: https://www.kaggle.com/datasets/fedesoriano/stellar-classification-dataset-sdss17
+
 Deep Learning: https://machinelearningmastery.com/tutorial-first-neural-network-python-keras/
+
 Python Machine Learning: https://machinelearningmastery.com/machine-learning-in-python-step-by-step/
 
 ## Columns

@@ -56,7 +56,7 @@ def model_switch(choice):
     elif (choice == 2):
         model = DecisionTreeClassifier(random_state=0, max_depth=20)
     elif (choice == 3):
-        model = RandomForestClassifier(n_estimators=100 ,criterion='entropy')
+        model = RandomForestClassifier(n_estimators=100 ,criterion='entropy', n_jobs=-1)
     elif (choice == 4):
         model = SGDClassifier(max_iter=1000, tol=0.01)
     elif (choice == 5):
@@ -112,7 +112,7 @@ def training(model, x, y):
     
     ypredit = model.predict(Xtest)
     os.system("clear")
-    res = int(input())
+    res = -1
     while(res != 0):
         print(" Rentre un chiffre:\n\n1 - Stats %\n2 - Stats raw\n3 - accuracy_score")
         print("0 - QUIT")
