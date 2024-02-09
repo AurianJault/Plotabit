@@ -5,15 +5,26 @@ import pandas as pd
 import matplotlib.pyplot as plt 
 import sklearn as sk
 
-from sklearn import svm
+from sklearn.svm import LinearSVC
 from sklearn.linear_model import SGDClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors import NearestCentroid
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
 
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 # from sklearn.externals.joblib import parallel_backend
+
+from numpy import mean
+from numpy import std
+from sklearn.datasets import make_classification
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.feature_selection import RFECV
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.pipeline import Pipeline
 
 # main
 def main():
@@ -25,6 +36,8 @@ def main():
     df = read_dataset("data.csv")
     x, y = get_xy_from_dataframe(df)
 
+
+    # rfecv_test(x, y, RandomForestClassifier())
     # Train model
     training(model, x, y)
 
@@ -42,25 +55,33 @@ def get_xy_from_dataframe(df):
 # Ask for model choice
 def prompt_display():
     print("""Choose a model:
-
-(1) - KNN
-(2) - Tree
-(3) - RandomForestClassifier
-(4) - SGD
-(5) - Linear SVC""")
+(1) - KNN (auto)
+(2) - KNN (ball_tree, n=5)
+(3) - Tree
+(4) - RandomForestClassifier
+(5) - SGD
+(6) - Linear SVC
+(7) - NearestCentroid
+(8) - MLPClassifier""")
     return int(input())
 
 def model_switch(choice):
     if (choice == 1):
-        model = KNeighborsClassifier()
+        model = KNeighborsClassifier(algorithm="auto")
     elif (choice == 2):
-        model = DecisionTreeClassifier(random_state=0, max_depth=20)
+        model = KNeighborsClassifier(n_neighbors=2, algorithm="ball_tree", weights="distance")
     elif (choice == 3):
-        model = RandomForestClassifier(n_estimators=100 ,criterion='entropy', n_jobs=-1)
+        model = DecisionTreeClassifier(random_state=0, max_depth=20)
     elif (choice == 4):
-        model = SGDClassifier(max_iter=1000, tol=0.01)
+        model = RandomForestClassifier(n_estimators=100 ,criterion='entropy', n_jobs=-1)
     elif (choice == 5):
-        model = svm.SVC(kernel='linear', C = 1.0)    
+        model = SGDClassifier(max_iter=1000, tol=0.01)
+    elif (choice == 6):
+        model = LinearSVC(C=1.0, dual=False, verbose=True, loss="squared_hinge", multi_class="crammer_singer")
+    elif (choice == 7):
+        model = NearestCentroid()
+    elif (choice == 8):
+        model = MLPClassifier(solver='adam', alpha=1e-5, random_state=1, activation="logistic", hidden_layer_sizes=(100,80,60,40,20,10,3))
     else:
         raise Exception('RENTRE LE BON NOMBRE GROS CON')       
     
@@ -111,7 +132,7 @@ def training(model, x, y):
     model.fit(Xtrain,ytrain)
     
     ypredit = model.predict(Xtest)
-    os.system("clear")
+    # os.system("clear")
     res = -1
     while(res != 0):
         print(" Rentre un chiffre:\n\n1 - Stats %\n2 - Stats raw\n3 - accuracy_score")
@@ -146,5 +167,20 @@ def showDate(df):
     plt.figure(figsize = (8, 8))
     plt.pie(x, labels = ['GALAXY', 'QSO', 'Star'])
     plt.legend()
+
+def rfecv_test(x, y, model):
+    rfe = RFECV(estimator=model)
+    pipeline = Pipeline(steps=[('s',rfe),('m',model)])
+    
+    # evaluate model
+    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
+    n_scores = cross_val_score(pipeline, x, y, scoring='accuracy', cv=cv, n_jobs=-1, error_score='raise', verbose=3)
+    
+    # report performance
+    print('Accuracy: %.3f (%.3f)' % (max(n_scores), std(n_scores)))
+
+    rfe.fit(x,y)
+    for i in range(x.shape[1]):
+        print('Column: %d, Selected %s, Rank: %.3f' % (i, rfe.support_[i], rfe.ranking_[i]))
     
 main()
