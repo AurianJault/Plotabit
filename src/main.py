@@ -34,7 +34,11 @@ from sklearn.metrics import confusion_matrix
 # main
 def main():
     # plotAll()
-    #auto_sklearn()
+    # auto_sklearn()
+
+    # dftmp = pd.read_csv('data.csv')
+    # dftmp.info()
+    # print(dftmp['class'].value_counts())
     
     # User input
     opt = prompt_display()
