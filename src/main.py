@@ -26,15 +26,26 @@ from sklearn.feature_selection import RFECV
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.pipeline import Pipeline
 
+import matplotlib.pyplot as plt
+import pandas
+from pandas.plotting import scatter_matrix
+from sklearn.metrics import confusion_matrix
+
 # main
 def main():
+    # plotAll()
+    # auto_sklearn()
+
+    # dftmp = pd.read_csv('data.csv')
+    # dftmp.info()
+    # print(dftmp['class'].value_counts())
+    
     # User input
     opt = prompt_display()
     model = model_switch(opt)
 
     # Get interesting data
-    df = read_dataset("data.csv")
-    x, y = get_xy_from_dataframe(df)
+    df, x, y = read_dataset('data.csv')
 
     # rfecv_test(x, y, RandomForestClassifier())
     # Train model
@@ -43,14 +54,11 @@ def main():
 # Open dataset with panda
 def read_dataset(filename):
     df = pd.read_csv(filename)
-    return df
-
-# Drop useless columns and return x and y
-def get_xy_from_dataframe(df):
     x = df.drop(['obj_ID','field_ID','run_ID','rerun_ID','cam_col','plate','MJD','fiber_ID','class'],axis=1)
     y = df['class'].values
-    return x, y 
 
+    return df, x, y
+    
 # Ask for model choice
 def prompt_display():
     print("""Choose a model:
@@ -80,7 +88,7 @@ def model_switch(choice):
     elif (choice == 7):
         model = NearestCentroid()
     elif (choice == 8):
-        model = MLPClassifier(solver='adam', alpha=1e-5, random_state=1, activation="logistic", hidden_layer_sizes=(100,80,60,40,20,10,3))
+        model = MLPClassifier(solver='adam', alpha=1e-5, random_state=1, activation="logistic", hidden_layer_sizes=(1000, 300, 100, 30, 10, 3))
     else:
         raise Exception('Wrong entry')       
     
@@ -124,8 +132,9 @@ def training(model, x, y):
         Xtest = Xtest.reshape(-1, 1)
  
     model.fit(Xtrain,ytrain)
-    
-    ypredit = model.predict(Xtest)
+
+    ypredict = model.predict(Xtest)
+    # confusion_matrix(ytrain, ypredict)
     # os.system("clear")
     res = -1
     while(res != 0):
@@ -134,13 +143,13 @@ def training(model, x, y):
         res = int(input())
         if(res == 1):
             os.system("clear")
-            printStatValues(ypredit,ytest)
+            printStatValues(ypredict,ytest)
         elif(res == 2):
             os.system("clear")
-            printPredictedValues(ypredit,ytest)
+            printPredictedValues(ypredict,ytest)
         elif res == 3:
             os.system("clear")
-            print(accuracy_score(ytest, ypredit))
+            print(accuracy_score(ytest, ypredict))
         elif res == 0:
             break
         else:
@@ -266,7 +275,59 @@ def bestModel(datas):
     print("Best model : ",model," columns : ",res[0]," Accuracy : ", res[1][model])
     print("Worst model : ",modelMin," columns : ",resMin[0]," Accuracy : ", resMin[1][model])
 
-df = read_dataset('data.csv')
+def auto_sklearn():
+    df = read_dataset('data.csv')
+    X_train, X_test, y_train, ytest = train_test_split(x, y,test_size=0.25, random_state=0)
+    X_train = X_train.values
+    X_test = X_test.values
+    
+    if len(Xtrain.shape) < 2:
+        Xtrain = Xtrain.reshape(-1, 1)
+    if len(Xtest.shape) < 2:
+        Xtest = Xtest.reshape(-1, 1)
+        
+    cls = autosklearn.classification.AutoSklearnClassifier()
+    cls.fit(X_train, y_train)
+    y_hat = predictions = cls.predict(X_test)
+    print("Accuracy score", sklearn.metrics.accuracy_score(y_test, y_hat))
+
+def plotAll():
+    df = read_dataset('data.csv')
+    
+    plotHistograms(df)
+    plotDensity(df)
+    plotBoxWhisker(df)
+    plotCorrelationMatrix(df)
+    plotScatterMatrix(df)
+
+def plotHistograms(df):
+    df.hist()
+    plt.show()
+
+def plotDensity(df):
+    df.plot(kind='density', subplots=True, layout=(3,3), sharex=False)
+    plt.show()
+
+def plotBoxWhisker(df):
+    df.plot(kind='box', subplots=True, layout=(3,3), sharex=False, sharey=False)
+    plt.show()
+
+def plotCorrelationMatrix(df):
+    correlations = df.corr()
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    cax = ax.matshow(correlations, vmin=-1, vmax=1)
+    fig.colorbar(cax)
+    ticks = np.arange(0,9,1)
+    ax.set_xticks(ticks)
+    ax.set_yticks(ticks)
+    ax.set_xticklabels(list(df))
+    ax.set_yticklabels(list(df))
+    plt.show()
+
+def plotScatterMatrix(df):
+    scatter_matrix(df)
+    plt.show()
 
 # Affiche la répartitions des objets stélaires dans la base de données
 #showData(df)
