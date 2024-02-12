@@ -5,6 +5,7 @@ Deep Learning: https://machinelearningmastery.com/tutorial-first-neural-network-
 
 Python Machine Learning: https://machinelearningmastery.com/machine-learning-in-python-step-by-step/
 
+AI Plot data: https://machinelearningmastery.com/visualize-machine-learning-data-python-pandas/
 ## Columns
 
 |Keep         |Skip        |
