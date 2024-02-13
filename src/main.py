@@ -122,6 +122,7 @@ def printStatValues(ypredit,ytest):
 
 # Train model
 def training(model, x, y):
+    # Sépare les données test (25%) des données d'entrainement (65%)
     Xtrain, Xtest, ytrain, ytest = train_test_split(x, y,test_size=0.25, random_state=0)
     Xtrain = Xtrain.values
     Xtest = Xtest.values
@@ -130,12 +131,11 @@ def training(model, x, y):
         Xtrain = Xtrain.reshape(-1, 1)
     if len(Xtest.shape) < 2:
         Xtest = Xtest.reshape(-1, 1)
- 
+    
+    # Entrainement du model choisi
     model.fit(Xtrain,ytrain)
 
     ypredict = model.predict(Xtest)
-    # confusion_matrix(ytrain, ypredict)
-    # os.system("clear")
     res = -1
     while(res != 0):
         print(" Rentre un chiffre:\n\n1 - Stats %\n2 - Stats raw\n3 - accuracy_score")
@@ -155,6 +155,9 @@ def training(model, x, y):
         else:
             raise Exception('Wrong entry')
 
+
+# Divise par 1.5 le nombre de galaxy 
+# (On a essayé d'équilibrer les différentes classes mais ça a affaiblit nos modèles à chaque fois)
 def clearData(df):
     res = df["class"].value_counts()
     dtemp = df.sort_values(by=['class'])
@@ -163,6 +166,7 @@ def clearData(df):
     dtemp = dtemp.iloc[34000:]
     return dtemp
 
+# Affiche un camembert de la répartition des classes présentes dans le csv
 def showData(df):
     res = df["class"].value_counts()
     x = [res["GALAXY"],res["QSO"],res["STAR"]]
@@ -184,7 +188,14 @@ def rfecv_test(x, y, model):
     rfe.fit(x,y)
     for i in range(x.shape[1]):
         print('Column: %d, Selected %s, Rank: %.3f' % (i, rfe.support_[i], rfe.ranking_[i]))
-    
+
+# Entraine "tout" les modèles en itérant sur les colonnes fournis (pas tous les cas car trop long).
+# Seulement sur les modèles KNN et TreeClassifier car trop long
+# EXEMPLE => colonnes = [A,B,C]
+# itèrations :
+# [A], [A,B], [A,B,C]
+# [B], [B,C]
+# [C]
 def allModels(df):
     dfClone = df.copy()
     # Aditionnale model randomforestclassifier(n_estimators=100 ,criterion='entropy', n_jobs=-1)
@@ -193,6 +204,7 @@ def allModels(df):
     y = df['class'].values
     x = list(dfTemp.columns.values)
     datas = []
+    # Itère sur les colonnes
     for i in range(0,len(x)):
         arrayColumns = [x[i]]
         for j in range(i+1,len(x)):
@@ -218,8 +230,15 @@ def allModels(df):
             datas.append(setUp.copy())
             
             arrayColumns.append(x[j])
+    # datas est de la forme suivante :
+    # datas =  
+    # [
+    #   [Listes_des_colonnes],
+    #   {'KNN': acccuray,'Tree': accuracy}
+    # ]
     return datas
 
+# Permet d'entrainer un model et retourne l'accuracy score
 def customTrainingRaw(model, x, y,res=-1):
     Xtrain, Xtest, ytrain, ytest = train_test_split(x, y,test_size=0.25, random_state=0)
     Xtrain = Xtrain.values
@@ -233,6 +252,7 @@ def customTrainingRaw(model, x, y,res=-1):
     print(accuracy_score(ytest, ypredit))
     return accuracy_score(ytest, ypredit)
 
+# Créer un nuiage de points de l'accuracy en fonction des colonnes itérées pour Knn et Tree
 def showStat(datas):
     fig, ax = plt.subplots()
     x_data = []
@@ -250,7 +270,7 @@ def showStat(datas):
     ax.legend()
     plt.show()
 
-
+# Trouve la meilleur accuracy et print le model + les colonnes
 def bestModel(datas):
     max = 0
     min = 1
@@ -292,7 +312,7 @@ def auto_sklearn():
     print("Accuracy score", sklearn.metrics.accuracy_score(y_test, y_hat))
 
 def plotAll():
-    df = read_dataset('data.csv')
+    x,df,y = read_dataset('data.csv')
     
     plotHistograms(df)
     plotDensity(df)
@@ -337,9 +357,9 @@ def plotScatterMatrix(df):
 #bestModel(datas)
 
 # Génère un nuage de points affichant l'accuracy du model Knn et TreeClassifier en fonction des colonnes utilisées.
-datas = allModels(df)
-showStat(datas)
-bestModel(datas)
+# datas = allModels(df)
+# showStat(datas)
+# bestModel(datas)
 
 # Affiche un menu permettant de choisir le model à entrainer, ainsi que des stats suplémentaires
-# main()
+main()
