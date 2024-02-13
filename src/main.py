@@ -97,11 +97,13 @@ def model_switch(choice):
 def plot_columns_hist(columns):
     x.hist()
     plt.show()
-    
+
+
 def printPredictedValues(ypredit,ytest):
     for i in range(0,len(ypredit)):
         print("✅ Prédit/Réel: ",ypredit[i],ytest[i]) if ypredit[i]==ytest[i] else print("🔴 Prédit/Réel: ",ypredit[i], ytest[i])
 
+# Affiche le pourcentage d'apparition dans les résultats faux du modèle pour chacune des classes
 def printStatValues(ypredit,ytest):
     galaxyStats = 0 
     starStats = 0 
