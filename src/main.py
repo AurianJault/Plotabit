@@ -97,11 +97,13 @@ def model_switch(choice):
 def plot_columns_hist(columns):
     x.hist()
     plt.show()
-    
+
+
 def printPredictedValues(ypredit,ytest):
     for i in range(0,len(ypredit)):
         print("✅ Prédit/Réel: ",ypredit[i],ytest[i]) if ypredit[i]==ytest[i] else print("🔴 Prédit/Réel: ",ypredit[i], ytest[i])
 
+# Affiche le pourcentage d'apparition dans les résultats faux du modèle pour chacune des classes
 def printStatValues(ypredit,ytest):
     galaxyStats = 0 
     starStats = 0 
@@ -122,6 +124,7 @@ def printStatValues(ypredit,ytest):
 
 # Train model
 def training(model, x, y):
+    # Sépare les données test (25%) des données d'entrainement (65%)
     Xtrain, Xtest, ytrain, ytest = train_test_split(x, y,test_size=0.25, random_state=0)
     Xtrain = Xtrain.values
     Xtest = Xtest.values
@@ -130,12 +133,11 @@ def training(model, x, y):
         Xtrain = Xtrain.reshape(-1, 1)
     if len(Xtest.shape) < 2:
         Xtest = Xtest.reshape(-1, 1)
- 
+    
+    # Entrainement du model choisi
     model.fit(Xtrain,ytrain)
 
     ypredict = model.predict(Xtest)
-    # confusion_matrix(ytrain, ypredict)
-    # os.system("clear")
     res = -1
     while(res != 0):
         print(" Rentre un chiffre:\n\n1 - Stats %\n2 - Stats raw\n3 - accuracy_score")
@@ -155,6 +157,9 @@ def training(model, x, y):
         else:
             raise Exception('Wrong entry')
 
+
+# Divise par 1.5 le nombre de galaxy 
+# (On a essayé d'équilibrer les différentes classes mais ça a affaiblit nos modèles à chaque fois)
 def clearData(df):
     res = df["class"].value_counts()
     dtemp = df.sort_values(by=['class'])
@@ -163,6 +168,7 @@ def clearData(df):
     dtemp = dtemp.iloc[34000:]
     return dtemp
 
+# Affiche un camembert de la répartition des classes présentes dans le csv
 def showData(df):
     res = df["class"].value_counts()
     x = [res["GALAXY"],res["QSO"],res["STAR"]]
@@ -184,7 +190,14 @@ def rfecv_test(x, y, model):
     rfe.fit(x,y)
     for i in range(x.shape[1]):
         print('Column: %d, Selected %s, Rank: %.3f' % (i, rfe.support_[i], rfe.ranking_[i]))
-    
+
+# Entraine "tout" les modèles en itérant sur les colonnes fournis (pas tous les cas car trop long).
+# Seulement sur les modèles KNN et TreeClassifier car trop long
+# EXEMPLE => colonnes = [A,B,C]
+# itèrations :
+# [A], [A,B], [A,B,C]
+# [B], [B,C]
+# [C]
 def allModels(df):
     dfClone = df.copy()
     # Aditionnale model randomforestclassifier(n_estimators=100 ,criterion='entropy', n_jobs=-1)
@@ -193,25 +206,41 @@ def allModels(df):
     y = df['class'].values
     x = list(dfTemp.columns.values)
     datas = []
+    # Itère sur les colonnes
     for i in range(0,len(x)):
         arrayColumns = [x[i]]
         for j in range(i+1,len(x)):
             xValues = dfTemp[arrayColumns]
-            for k in range(0,len(modelArray)):
-                if modelArray[k] == "KNN":
-                    model = model_switch(1)
-                elif modelArray[k] == "Classifier":
-                    model = model_switch(2)
-                else:
-                    model = model_switch(1)
-                print("Model used : ",modelArray[k], "---- Case : ",model)
-                print("X values used : ",arrayColumns)
-                accu = customTrainingRaw(model,xValues,y,3)
-                it = [modelArray[k],arrayColumns,accu]
-                datas.append(it)
+            
+            # Knn model train
+            model = model_switch(1)
+            accuKnn = customTrainingRaw(model,xValues,y,3)
+            print("Model used : Knn ---- Case : ",model)
+            print("X values used : ",arrayColumns)
+
+            # Tree model train
+            model = model_switch(3)
+            accuTree = customTrainingRaw(model,xValues,y,3)
+            print("Model used : Tree ---- Case : ",model)
+            print("X values used : ",arrayColumns)
+
+            
+            dico = dict()
+            setUp = [arrayColumns.copy(),dico]
+            setUp[1]['Knn'] = accuKnn
+            setUp[1]['Tree'] = accuTree
+            datas.append(setUp.copy())
+            
             arrayColumns.append(x[j])
+    # datas est de la forme suivante :
+    # datas =  
+    # [
+    #   [Listes_des_colonnes],
+    #   {'KNN': acccuray,'Tree': accuracy}
+    # ]
     return datas
 
+# Permet d'entrainer un model et retourne l'accuracy score
 def customTrainingRaw(model, x, y,res=-1):
     Xtrain, Xtest, ytrain, ytest = train_test_split(x, y,test_size=0.25, random_state=0)
     Xtrain = Xtrain.values
@@ -225,25 +254,48 @@ def customTrainingRaw(model, x, y,res=-1):
     print(accuracy_score(ytest, ypredit))
     return accuracy_score(ytest, ypredit)
 
-def bestModelFinder(datas):
-    maxi = 0
-    knnMean= 0
-    treeMean= 0
+# Créer un nuiage de points de l'accuracy en fonction des colonnes itérées pour Knn et Tree
+def showStat(datas):
+    fig, ax = plt.subplots()
+    x_data = []
+    y_dataKnn = []
+    y_dataTree = []
     for i in range(0,len(datas)):
-        if datas[i][0] == 'KNN':
-            knnMean += datas[i][2]
-        else:
-            treeMean += datas[i][2]
-        if (datas[i][2] > maxi):
-            maxi = datas[i][2]
+        x_data.append("/".join(datas[i][0]))
+        y_dataKnn.append(datas[i][1]['Knn'])
+        y_dataTree.append(datas[i][1]['Tree'])
+
+    ax.scatter(x_data, y_dataKnn, label=f'Y = Knn')
+    ax.scatter(x_data, y_dataTree, label=f'Y = Tree')
+    ax.set_xlabel('Axe X')
+    ax.set_ylabel('Axe Y')
+    ax.legend()
+    plt.show()
+
+# Trouve la meilleur accuracy et print le model + les colonnes
+def bestModel(datas):
+    max = 0
+    min = 1
+    for i in range(0,len(datas)):
+        if(datas[i][1]['Knn'] < min):
+            min = datas[i][1]['Knn']
+            resMin = datas[i]
+            modelMin = 'Knn'
+        elif datas[i][1]['Tree'] < min:
+            min = datas[i][1]['Tree']
+            resMin = datas[i]
+            modelMin = 'Tree'
+
+        if(datas[i][1]['Knn'] > max):
+            max = datas[i][1]['Knn']
             res = datas[i]
-    print("BEST CHOICE IS :", res)
-    print("Knn mean accuracy_score : ", mean(knnMean))
-    print("Knn variance accuracy_score : ", variance(knnMean))
-    print("Knn ecart-type accuracy_score : ", stdev(knnMean))
-    print("Tree mean accuracy_score : ", mean(treeMean))
-    print("Tree variance accuracy_score : ", variance(treeMean))
-    print("Tree ecart-type accuracy_score : ", stdev(treeMean))
+            model = 'Knn'
+        elif datas[i][1]['Tree'] > max:
+            max = datas[i][1]['Tree']
+            res = datas[i]
+            model = 'Tree'
+    print("Best model : ",model," columns : ",res[0]," Accuracy : ", res[1][model])
+    print("Worst model : ",modelMin," columns : ",resMin[0]," Accuracy : ", resMin[1][model])
 
 def auto_sklearn():
     df = read_dataset('data.csv')
@@ -262,7 +314,7 @@ def auto_sklearn():
     print("Accuracy score", sklearn.metrics.accuracy_score(y_test, y_hat))
 
 def plotAll():
-    df = read_dataset('data.csv')
+    x,df,y = read_dataset('data.csv')
     
     plotHistograms(df)
     plotDensity(df)
@@ -299,4 +351,17 @@ def plotScatterMatrix(df):
     scatter_matrix(df)
     plt.show()
 
+# Affiche la répartitions des objets stélaires dans la base de données
+#showData(df)
+
+# Affiche le meilleur models avec les meilleurs colonnes entre KNeighborsClassifier et DecisionTreeClassifier
+#datas = allModels(df)
+#bestModel(datas)
+
+# Génère un nuage de points affichant l'accuracy du model Knn et TreeClassifier en fonction des colonnes utilisées.
+# datas = allModels(df)
+# showStat(datas)
+# bestModel(datas)
+
+# Affiche un menu permettant de choisir le model à entrainer, ainsi que des stats suplémentaires
 main()
