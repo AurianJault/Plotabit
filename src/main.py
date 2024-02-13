@@ -30,6 +30,7 @@ import matplotlib.pyplot as plt
 import pandas
 from pandas.plotting import scatter_matrix
 from sklearn.metrics import confusion_matrix
+from sklearn.metrics import f1_score
 
 # main
 def main():
@@ -88,7 +89,7 @@ def model_switch(choice):
     elif (choice == 7):
         model = NearestCentroid()
     elif (choice == 8):
-        model = MLPClassifier(solver='adam', alpha=1e-5, random_state=1, activation="logistic", hidden_layer_sizes=(1000, 300, 100, 30, 10, 3))
+        model = MLPClassifier(solver='adam', alpha=1e-5, random_state=1, activation="logistic", hidden_layer_sizes=(5, 9, 5, 5, 3))
     else:
         raise Exception('Wrong entry')       
     
@@ -151,7 +152,8 @@ def training(model, x, y):
             printPredictedValues(ypredict,ytest)
         elif res == 3:
             os.system("clear")
-            print(accuracy_score(ytest, ypredict))
+            print("Accuracy: ", accuracy_score(ytest, ypredict))
+            print("F1: ", f1_score(ytest, ypredict, average="macro"))
         elif res == 0:
             break
         else:
@@ -176,17 +178,18 @@ def showData(df):
     plt.pie(x, labels = ['GALAXY', 'QSO', 'Star'])
     plt.legend()
 
+# N'a jamais fini pour cause de puissance
 def rfecv_test(x, y, model):
     rfe = RFECV(estimator=model)
     pipeline = Pipeline(steps=[('s',rfe),('m',model)])
     
-    # evaluate model
+    # Evaluation du modele
     cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=3, random_state=1)
     n_scores = cross_val_score(pipeline, x, y, scoring='accuracy', cv=cv, n_jobs=-1, error_score='raise', verbose=3)
     
-    # report performance
     print('Accuracy: %.3f (%.3f)' % (max(n_scores), std(n_scores)))
 
+    # Affiche la pertinence des colonnes dans l'entrainement
     rfe.fit(x,y)
     for i in range(x.shape[1]):
         print('Column: %d, Selected %s, Rank: %.3f' % (i, rfe.support_[i], rfe.ranking_[i]))
@@ -297,6 +300,7 @@ def bestModel(datas):
     print("Best model : ",model," columns : ",res[0]," Accuracy : ", res[1][model])
     print("Worst model : ",modelMin," columns : ",resMin[0]," Accuracy : ", resMin[1][model])
 
+# Test auto-sklearn
 def auto_sklearn():
     df = read_dataset('data.csv')
     X_train, X_test, y_train, ytest = train_test_split(x, y,test_size=0.25, random_state=0)
@@ -313,6 +317,7 @@ def auto_sklearn():
     y_hat = predictions = cls.predict(X_test)
     print("Accuracy score", sklearn.metrics.accuracy_score(y_test, y_hat))
 
+# Affiche tout les plots
 def plotAll():
     x,df,y = read_dataset('data.csv')
     

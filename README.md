@@ -23,9 +23,9 @@ AI Plot data: https://machinelearningmastery.com/visualize-machine-learning-data
 ## Analysis
 
 - [X] Train models with just 20000 "GALAXY" class (has an impact?)
-- [ ] Which model is the best, ratio learn_time/precision
-- [ ] Can we drop more categories and have same results (useless data?)
-- [ ] Compare prediction with y_test that were false
+- [X] Which model is the best, ratio learn_time/precision
+- [X] Can we drop more categories and have same results (useless data?)
+- [X] Compare prediction with y_test that were false
 
 ## Dataset
 Nous avons décidé de prendre un dataset sur le site Kaggle, il contient 100 000 lignes qui réprésentent
@@ -111,10 +111,10 @@ de 98%.
 
 Voici les résultats obtenu sur l'ensemble des modèles:
 
-- KNN (70,724%)
-- Decision Tree (96,82%)
+- KNN (accuracy: 70,724%, f1: 61.35%)
+- Decision Tree (accuracy: 96,82%, f1: 96,32%) 
 - Linear SVC (n'a jamais fini)
-- Random Forest (98.012%)
-- Multi-Layer Perceptron (59.22%)
-- Nearest Centroid (36.328%)
-- SGD (18.972%)
+- Random Forest (accuracy: 98.012%, f1: 97,61%)
+- Multi-Layer Perceptron (accuracy: 59.22%, f1: 24.7%)
+- Nearest Centroid (accuracy: 36.328%, f1: 36,85%)
+- SGD (accuracy: 21%, f1: 11%)
